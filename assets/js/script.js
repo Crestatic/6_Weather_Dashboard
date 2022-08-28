@@ -37,7 +37,7 @@ function renderHistory() {
         cityBtn.classList.add("searchHistoryBtn")
         
         cityBtn.innerText = savedSearch[i];
-        console.log(cityBtn);
+        
         $('#history').append(cityBtn);
     }
 }
@@ -56,55 +56,72 @@ var fetchWeather = async cityInput => {
     }
     
     renderWeather(weather);
+    fetchUVI(weather)
+    
 }
 
-// function fetchWeather(cityInput) {
-
-//     var weatherURL = `https://api.openweathermap.org/data/2.5/weather?q=${cityInput}&appid=${ApiKey}`
-//     console.log(weatherURL);
-//     fetch(weatherURL).then(function(response) {
-
-//         if (response.status === 404) {
-//             $('#errorContainer').classList.remove('hide');
-//             $('#weatherContainer').classList.add('hide');
-//         } else {
-//             response.json().then(function(data) {
-//                 renderWeather(data, cityInput);
-//             });
-//         }
-//     });
-// }
 
 function renderWeather(weather) {
     
     // $('#weatherContainer').classList.remove('hide');
     var cityInput = $('#cityInput').val();
     
-    var iconLoc = weather.weather[0].icon
-    var weatherIcon = `https://openweathermap.org/img/w/${iconLoc}.png`
-    console.log(weatherIcon);
+    // Variables used to grab current weather Icon from API
+    var weatherIcon = `https://openweathermap.org/img/w/${weather.weather[0].icon}.png`
+    // console.log(weatherIcon);
+
     let currentTime = weather.dt;
     let timeZone = weather.timezone;
     let timeZoneHours = timeZone / 60 / 60;
     let displayTime = moment.unix(currentTime).utc().utcOffset(timeZoneHours);
 
-    var cityLat = weather.coord.lat;
-    var cityLon = weather.coord.lon;
-    
-    var weatherContent = document.createElement('div');
     
     var weatherInnerHTML = `
-        <div class="card">
-            <h3>${cityInput} ${displayTime.format("(MM/DD/YY)")} <img src="${weatherIcon}"></h3>
-            
-
+        <div>
+            <h3> ${cityInput} ${displayTime.format("(MM/DD/YYYY)")} <img src="${weatherIcon}"></h3>
+            <h6> Temperature: ${weather.main.temp} °F </h6>
+            <h6> Wind: ${weather.wind.speed} MPH </h6>
+            <h6> Humidity: ${weather.main.humidity} % </h6>
+            <h6> UV Index: <button id="UVI"></button>
         </div>
 
     `;
 
-    weatherContent.innerHTML = weatherInnerHTML;
-    console.log(weatherContent);
-    weatherContainerEl.appendChild(weatherContent);
+    weatherContainerEl.innerHTML = weatherInnerHTML;
+    
     
     console.log(weatherContainerEl);
 }
+
+function fetchUVI(weather) {
+
+    var cityLat = weather.coord.lat;
+    var cityLon = weather.coord.lon;
+
+    var coordsURL = `https://api.openweathermap.org/data/2.5/uvi?lat=${cityLat}&lon=${cityLon}&appid=${ApiKey}`
+    
+    fetch(coordsURL).then(function(res) {
+        res.json().then(function(data) {
+            console.log(data)
+            
+            renderUVI(data)
+        })
+    })
+}
+
+function renderUVI(data) {
+    var UVIndex = data.value;
+    console.log(UVIndex);
+
+    $('#UVI').text(UVIndex);
+
+    if (UVIndex <= 2) {
+        $("#UVI").attr("class", "favorable");
+      } else if (UVIndex > 2 && UVIndex <= 7) {
+        $("#UVI").attr("class", "moderate");
+      } else {
+        $("#UVI").attr("class", "severe");
+      }
+
+}
+
